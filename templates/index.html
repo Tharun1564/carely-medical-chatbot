@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medical Chatbot</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Medical Chatbot</h1>
+        <p>Ask me about common medical symptoms for general advice.</p>
+        <div id="chat-window">
+            <div class="message bot">
+                <strong>Bot:</strong> Hello! I'm here to help with general medical advice. What symptoms are you experiencing?
+            </div>
+        </div>
+        <form id="chat-form">
+            <input type="text" id="message-input" placeholder="Describe your symptom..." required>
+            <button type="submit">Send</button>
+        </form>
+    </div>
+    <script>
+        const chatWindow = document.getElementById('chat-window');
+        const chatForm = document.getElementById('chat-form');
+        const messageInput = document.getElementById('message-input');
+
+        chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const message = messageInput.value.trim();
+            if (!message) return;
+
+            // Add user message
+            addMessage('user', message);
+            messageInput.value = '';
+
+            // Show typing indicator
+            const typingDiv = addTypingIndicator();
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message: message }),
+                });
+                const data = await response.json();
+                
+                // Remove typing indicator
+                chatWindow.removeChild(typingDiv);
+                
+                // Add bot response
+                addMessage('bot', data.response);
+            } catch (error) {
+                chatWindow.removeChild(typingDiv);
+                addMessage('bot', 'Sorry, I encountered an error. Please try again.');
+            }
+
+            // Scroll to bottom
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        });
+
+        function addMessage(sender, text) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            messageDiv.innerHTML = `<strong>${sender === 'user' ? 'You:' : 'Bot:'}</strong> ${text}`;
+            chatWindow.appendChild(messageDiv);
+        }
+
+        function addTypingIndicator() {
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'message bot typing';
+            typingDiv.innerHTML = '<strong>Bot:</strong> <em>Typing...</em>';
+            chatWindow.appendChild(typingDiv);
+            return typingDiv;
+        }
+    </script>
+</body>
+</html>
