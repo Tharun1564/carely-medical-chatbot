@@ -3,39 +3,154 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Medical Chatbot</title>
+    <meta name="theme-color" content="#f4f8f7">
+    <title>Carely — Health information, made clearer</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <div class="container">
-        <h1>Medical Chatbot</h1>
-        <p>Ask me about common medical symptoms for general advice.</p>
-        <div id="chat-window">
-            <div class="message bot">
-                <strong>Bot:</strong> Hello! I'm here to help with general medical advice. What symptoms are you experiencing?
+    <div class="app-shell">
+        <header class="topbar">
+            <a class="brand" href="/" aria-label="Carely home">
+                <span class="brand-mark" aria-hidden="true">
+                    <svg viewBox="0 0 32 32" fill="none">
+                        <path d="M16 27s-10-6.2-10-13.1A5.7 5.7 0 0 1 16 10a5.7 5.7 0 0 1 10 3.9C26 20.8 16 27 16 27Z" fill="currentColor" opacity=".2"/>
+                        <path d="M16 27s-10-6.2-10-13.1A5.7 5.7 0 0 1 16 10a5.7 5.7 0 0 1 10 3.9C26 20.8 16 27 16 27Z" stroke="currentColor" stroke-width="2"/>
+                        <path d="M10 16h3l1.7-3.2 2.7 6 1.6-2.8H23" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </span>
+                <span>carely<span class="brand-period">.</span></span>
+            </a>
+            <div class="topbar-note">
+                <span class="online-dot"></span>
+                <span>Private, local conversation</span>
             </div>
-        </div>
-        <form id="chat-form">
-            <input type="text" id="message-input" placeholder="Describe your symptom..." required>
-            <button type="submit">Send</button>
-        </form>
+        </header>
+
+        <main class="workspace">
+            <aside class="welcome-panel">
+                <div class="eyebrow"><span class="eyebrow-line"></span> YOUR HEALTH, IN CONTEXT</div>
+                <h1>Small questions.<br><span>Clearer answers.</span></h1>
+                <p class="welcome-copy">A thoughtful place to talk through health questions and understand possible next steps.</p>
+
+                <div class="health-illustration" role="img" aria-label="Illustration of a healthcare professional with a medical cross">
+                    <div class="illustration-orbit orbit-one"></div>
+                    <div class="illustration-orbit orbit-two"></div>
+                    <div class="illustration-card card-cross"><span>+</span></div>
+                    <div class="illustration-card card-heart">
+                        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20.8 8.7c0 4.4-8.8 10-8.8 10s-8.8-5.6-8.8-10A4.7 4.7 0 0 1 12 6.5a4.7 4.7 0 0 1 8.8 2.2Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M6.5 11h3l1.4-2.4 2.1 4.3 1.4-2.1h3.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                    <svg class="clinician-illustration" viewBox="0 0 260 250" fill="none" aria-hidden="true">
+                        <ellipse cx="131" cy="228" rx="92" ry="12" fill="#d8ebe5"/>
+                        <path d="M73 222c4-36 14-61 34-70h48c20 9 30 34 34 70H73Z" fill="#fff" stroke="#c8ddd7" stroke-width="2"/>
+                        <path d="m106 151 25 28 25-28 17 7-17 64h-50l-17-64 17-7Z" fill="#eaf4f1"/>
+                        <path d="m117 158 14 21 14-21" stroke="#8bb7a9" stroke-width="2"/>
+                        <path d="M131 179v37" stroke="#8bb7a9" stroke-width="2"/>
+                        <path d="M105 111c0-24 11-40 28-40s28 16 28 40v17c0 19-13 34-28 34s-28-15-28-34v-17Z" fill="#d99473"/>
+                        <path d="M103 112c-4-30 9-52 32-52 21 0 34 16 29 43l-11-14c-12 3-25 2-39-4l-11 27Z" fill="#354f49"/>
+                        <path d="M111 119h1m38 0h1" stroke="#344d47" stroke-width="3" stroke-linecap="round"/>
+                        <path d="M123 137c5 4 11 4 16 0" stroke="#a65d4a" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M91 189c-13 2-20 13-21 28m119-28c13 2 20 13 21 28" stroke="#c8ddd7" stroke-width="2"/>
+                        <path d="M152 186h14v21h-14z" fill="#fff" stroke="#b8d5ca" stroke-width="1.5"/>
+                        <path d="M159 191v11m-5.5-5.5h11" stroke="#6da58e" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    <span class="illustration-spark spark-one">✳</span>
+                    <span class="illustration-spark spark-two">✦</span>
+                </div>
+
+                <div class="privacy-note">
+                    <span class="privacy-icon" aria-hidden="true">
+                        <svg viewBox="0 0 20 20" fill="none"><path d="M10 2.5 16 5v4.2c0 4.1-2.7 6.8-6 8.3-3.3-1.5-6-4.2-6-8.3V5l6-2.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="m7.5 10 1.7 1.7 3.5-3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </span>
+                    <span><strong>Your conversation stays on this device</strong><small>Responses are generated locally with Ollama.</small></span>
+                </div>
+            </aside>
+
+            <section class="chat-card" aria-label="Health information chat">
+                <div class="chat-header">
+                    <div class="assistant-avatar" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none"><path d="M12 21s-8-5-8-10.5A4.5 4.5 0 0 1 12 8a4.5 4.5 0 0 1 8 2.5C20 16 12 21 12 21Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M7.5 12h2l1.2-2 2 4 1.2-2h2.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                    <div class="assistant-details">
+                        <h2>Health companion</h2>
+                        <p><span class="online-dot"></span> Here to help you think it through</p>
+                    </div>
+                    <button type="button" class="new-chat-button" id="new-chat-button" aria-label="Start a new conversation" title="Start a new conversation">
+                        <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M16.5 9a6.5 6.5 0 1 0 .2 2.3M16.5 4.5V9H12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        <span>New chat</span>
+                    </button>
+                    <span class="local-badge"><span></span> LOCAL AI</span>
+                </div>
+
+                <div id="chat-window" aria-live="polite" aria-label="Conversation">
+                    <div class="welcome-message">
+                        <div class="message-avatar" aria-hidden="true">c</div>
+                        <div class="message-content">
+                            <div class="message-meta">CARELY <span>·</span> JUST NOW</div>
+                            <div class="message bot">Hi there. I'm here to help with general health information. What would you like to talk about today?</div>
+                        </div>
+                    </div>
+                    <div class="suggestions" aria-label="Suggested questions">
+                        <span class="suggestions-label">YOU COULD ASK</span>
+                        <button type="button" class="suggestion-chip">How can I sleep better?</button>
+                        <button type="button" class="suggestion-chip">What should I ask my doctor?</button>
+                        <button type="button" class="suggestion-chip">Help me understand a symptom</button>
+                    </div>
+                </div>
+
+                <form id="chat-form">
+                    <label class="sr-only" for="message-input">Your health question</label>
+                    <div class="composer">
+                        <input type="text" id="message-input" placeholder="Ask a health question..." maxlength="4000" autocomplete="off" required>
+                        <button type="submit" aria-label="Send message">
+                            <span>Send</span>
+                            <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M3.5 10h12m-5-5 5 5-5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </button>
+                    </div>
+                    <p class="composer-hint">Press <kbd>Enter</kbd> to send <span>·</span> Please don't include identifying information.</p>
+                </form>
+                <div class="medical-disclaimer">
+                    <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 1.5 13 3.6v3.5c0 3.4-2.3 5.7-5 7C5.3 12.8 3 10.5 3 7.1V3.6l5-2.1Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><path d="M8 5v3m0 2h.01" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+                    <span>For general education only—not diagnosis or treatment. For urgent concerns, contact emergency services.</span>
+                </div>
+            </section>
+        </main>
+        <footer class="page-footer">A little more clarity, one question at a time.</footer>
     </div>
     <script>
         const chatWindow = document.getElementById('chat-window');
         const chatForm = document.getElementById('chat-form');
         const messageInput = document.getElementById('message-input');
+        const sendButton = chatForm.querySelector('button[type="submit"]');
+        const newChatButton = document.getElementById('new-chat-button');
+        const conversationHistory = [];
+        const initialChatContent = chatWindow.innerHTML;
+
+        newChatButton.addEventListener('click', () => {
+            conversationHistory.length = 0;
+            chatWindow.innerHTML = initialChatContent;
+            messageInput.value = '';
+            messageInput.focus();
+        });
+
+        chatWindow.addEventListener('click', (event) => {
+            const suggestion = event.target.closest('.suggestion-chip');
+            if (suggestion) {
+                messageInput.value = suggestion.textContent.trim();
+                messageInput.focus();
+            }
+        });
 
         chatForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const message = messageInput.value.trim();
             if (!message) return;
 
-            // Add user message
             addMessage('user', message);
             messageInput.value = '';
 
-            // Show typing indicator
             const typingDiv = addTypingIndicator();
+            sendButton.disabled = true;
+            newChatButton.disabled = true;
 
             try {
                 const response = await fetch('/api/chat', {
@@ -43,37 +158,82 @@
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ message: message }),
+                    body: JSON.stringify({
+                        message: message,
+                        history: conversationHistory.slice(-12),
+                    }),
                 });
                 const data = await response.json();
-                
-                // Remove typing indicator
-                chatWindow.removeChild(typingDiv);
-                
-                // Add bot response
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'The AI service could not answer. Please try again.');
+                }
+
+                conversationHistory.push(
+                    { role: 'user', content: message },
+                    { role: 'assistant', content: data.response }
+                );
+                conversationHistory.splice(0, Math.max(0, conversationHistory.length - 12));
                 addMessage('bot', data.response);
             } catch (error) {
-                chatWindow.removeChild(typingDiv);
-                addMessage('bot', 'Sorry, I encountered an error. Please try again.');
+                addMessage('bot', error.message || 'Could not contact the chatbot. Check your connection and try again.');
+            } finally {
+                typingDiv.remove();
+                sendButton.disabled = false;
+                newChatButton.disabled = false;
+                chatWindow.scrollTop = chatWindow.scrollHeight;
+                messageInput.focus();
             }
-
-            // Scroll to bottom
-            chatWindow.scrollTop = chatWindow.scrollHeight;
         });
 
         function addMessage(sender, text) {
+            const wrapper = document.createElement('div');
+            wrapper.className = sender === 'user' ? 'user-message' : 'welcome-message';
+
+            if (sender === 'bot') {
+                const avatar = document.createElement('div');
+                avatar.className = 'message-avatar';
+                avatar.textContent = 'c';
+                wrapper.appendChild(avatar);
+            }
+
+            const content = document.createElement('div');
+            content.className = 'message-content';
+            const meta = document.createElement('div');
+            meta.className = 'message-meta';
+            meta.textContent = sender === 'user' ? 'YOU' : 'CARELY';
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${sender}`;
-            messageDiv.innerHTML = `<strong>${sender === 'user' ? 'You:' : 'Bot:'}</strong> ${text}`;
-            chatWindow.appendChild(messageDiv);
+            messageDiv.textContent = text;
+            content.append(meta, messageDiv);
+            wrapper.appendChild(content);
+            chatWindow.appendChild(wrapper);
         }
 
         function addTypingIndicator() {
-            const typingDiv = document.createElement('div');
-            typingDiv.className = 'message bot typing';
-            typingDiv.innerHTML = '<strong>Bot:</strong> <em>Typing...</em>';
-            chatWindow.appendChild(typingDiv);
-            return typingDiv;
+            const wrapper = document.createElement('div');
+            wrapper.className = 'welcome-message';
+            const avatar = document.createElement('div');
+            avatar.className = 'message-avatar';
+            avatar.textContent = 'c';
+            const content = document.createElement('div');
+            content.className = 'message-content';
+            const meta = document.createElement('div');
+            meta.className = 'message-meta';
+            meta.textContent = 'CARELY';
+            const message = document.createElement('div');
+            message.className = 'message bot typing';
+            for (let i = 0; i < 3; i += 1) {
+                message.appendChild(document.createElement('span'));
+            }
+            const status = document.createElement('em');
+            status.textContent = 'Thinking';
+            message.appendChild(status);
+            content.append(meta, message);
+            wrapper.append(avatar, content);
+            chatWindow.appendChild(wrapper);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+            return wrapper;
         }
     </script>
 </body>

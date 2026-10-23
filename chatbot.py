@@ -1,6 +1,9 @@
-from flask import Flask, render_template, request
-import openai
+from flask import Flask, jsonify, render_template, request
+import json
 import os
+import socket
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 from dotenv import load_dotenv
 
 app = Flask(__name__)
@@ -8,8 +11,8 @@ app = Flask(__name__)
 # Load environment variables from .env file
 load_dotenv()
 
-# Set OpenAI API key from environment variable
-openai.api_key = os.getenv('OPENAI_API_KEY')
+ollama_url = os.getenv('OLLAMA_URL', 'http://127.0.0.1:11434').rstrip('/')
+ollama_model = os.getenv('OLLAMA_MODEL', 'llama3.2:3b')
 
 @app.route('/')
 def home():
@@ -17,75 +20,118 @@ def home():
 
 @app.route('/chat', methods=['POST'])
 def chat():
-    user_message = request.form['message']
-    response = get_medical_response(user_message)
+    user_message = request.form.get('message', '').strip()
+    try:
+        response = get_medical_response(user_message)
+    except AIServiceError as error:
+        response = error.message
     return render_template('index.html', user_message=user_message, response=response)
 
 @app.route('/api/chat', methods=['POST'])
 def api_chat():
-    data = request.get_json()
-    user_message = data.get('message', '')
-    response = get_medical_response(user_message)
-    return {'response': response}
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify(error="Send a valid JSON request."), 400
 
-def get_medical_response(message):
-    if not openai.api_key:
-        return "API key not configured. Please set OPENAI_API_KEY environment variable. For testing, you can get a free API key from https://platform.openai.com/"
-    
+    user_message = data.get('message')
+    history = data.get('history', [])
+    if not isinstance(user_message, str) or not user_message.strip():
+        return jsonify(error="Enter a message before sending."), 400
+    if len(user_message) > 4000:
+        return jsonify(error="Please keep each message under 4,000 characters."), 400
+    if not isinstance(history, list) or len(history) > 12:
+        return jsonify(error="The conversation is too long. Start a new conversation and try again."), 400
+
+    validated_history = []
+    for item in history:
+        if (
+            not isinstance(item, dict)
+            or item.get('role') not in ('user', 'assistant')
+            or not isinstance(item.get('content'), str)
+        ):
+            return jsonify(error="The conversation history is invalid. Please refresh and try again."), 400
+        validated_history.append({
+            'role': item['role'],
+            'content': item['content'][:4000],
+        })
+
     try:
-        prompt = f"""You are a medical chatbot providing general health advice with specific treatment recommendations.
-        IMPORTANT: Always emphasize that this is not a substitute for professional medical advice and users should consult healthcare professionals for personalized treatment.
-        
-        User query: {message}
-        
-        Provide helpful, specific advice for common symptoms including:
-        - Common over-the-counter medications/tablets that may help
-        - General treatment approaches
-        - When to seek immediate medical attention
-        - Home remedies and lifestyle changes
-        
-        Be direct and informative about treatment options while maintaining safety disclaimers. If the query is not medical, politely redirect to medical topics."""
-        
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "You are a knowledgeable medical assistant chatbot that provides specific treatment information including medication recommendations while emphasizing professional consultation."},
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=300,
-            temperature=0.3
-        )
-        
-        return response.choices[0].message.content.strip()
-    except openai.AuthenticationError:
-        return "Authentication failed. Please check your OpenAI API key is correct and has sufficient credits."
-    except openai.RateLimitError:
-        return "Rate limit exceeded. Please wait a moment before trying again, or check your OpenAI usage limits."
-    except openai.APIError as e:
-        return f"OpenAI API error: {str(e)}. Please try again later."
-    except Exception as e:
-        # Fallback to basic keyword responses if API fails
-        return get_fallback_response(message)
+        answer = get_medical_response(user_message.strip(), validated_history)
+        return jsonify(response=answer)
+    except AIServiceError as error:
+        return jsonify(error=error.message), error.status_code
 
-def get_fallback_response(message):
-    """Fallback keyword-based responses when API is unavailable"""
-    message = message.lower()
-    if 'headache' in message:
-        return "For headaches, try over-the-counter pain relievers like acetaminophen (Tylenol) 500mg every 6 hours, or ibuprofen (Advil) 400mg. Rest in a quiet, dark room and stay hydrated. Consult a doctor if headaches persist or worsen."
-    elif 'fever' in message:
-        return "For fever, take acetaminophen (Tylenol) 500mg every 4-6 hours as needed. Stay hydrated and rest. Seek medical attention if fever exceeds 103°F (39.4°C) or lasts more than 3 days."
-    elif 'cough' in message:
-        return "For cough, try over-the-counter cough syrups containing dextromethorphan or guaifenesin. Drink warm fluids and use a humidifier. Consult a doctor if cough persists over 2 weeks or is accompanied by other symptoms."
-    elif 'cold' in message:
-        return "For common cold, rest, drink plenty of fluids, and use over-the-counter medications like acetaminophen for pain/fever and decongestants if needed. Symptoms usually resolve in 7-10 days. See a doctor if symptoms worsen."
-    elif 'stomach pain' in message or 'abdominal pain' in message:
-        return "For stomach pain, avoid heavy or spicy foods. Try ginger tea or over-the-counter antacids like Tums. If pain is severe or persistent, seek immediate medical attention."
-    elif 'pain' in message:
-        return "For general pain, consider over-the-counter options like acetaminophen (Tylenol) or ibuprofen (Advil/Motrin). Follow dosage instructions and consult a healthcare professional for persistent pain."
-    elif 'infection' in message:
-        return "For suspected infections, consult a healthcare professional for proper diagnosis and treatment. They may prescribe antibiotics if bacterial infection is confirmed."
-    else:
-        return "I'm currently experiencing technical difficulties with AI responses. For general medical advice, please consult a healthcare professional. What specific symptom are you experiencing? I can provide basic information about common conditions."
+
+class AIServiceError(Exception):
+    def __init__(self, message, status_code):
+        self.message = message
+        self.status_code = status_code
+
+
+def get_medical_response(message, history=None):
+    messages = [
+        {
+            "role": "system",
+            "content": (
+                "You are a warm, attentive conversational assistant for general health education. "
+                "Talk naturally and kindly, including when the user greets you or asks a non-medical "
+                "small-talk question. For health questions, first acknowledge the concern, then explain "
+                "what may be going on in clear everyday language, what safe next steps they can take, "
+                "and which warning signs need urgent care. Ask relevant follow-up questions rather than "
+                "guessing when key details are missing. Never claim to diagnose, never make up facts, "
+                "and do not prescribe or invent medication doses. Encourage a clinician or pharmacist "
+                "for personalized medical or medication advice. Be specific and useful, not formulaic, "
+                "and avoid repeating disclaimers unless they matter to the current answer."
+            ),
+        },
+    ]
+    messages.extend(history or [])
+    messages.append({"role": "user", "content": message})
+
+    payload = json.dumps({
+        "model": ollama_model,
+        "messages": messages,
+        "stream": False,
+        "options": {"temperature": 0.6},
+    }).encode("utf-8")
+    request = Request(
+        f"{ollama_url}/api/chat",
+        data=payload,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+
+    try:
+        with urlopen(request, timeout=180) as response:
+            result = json.loads(response.read().decode("utf-8"))
+    except HTTPError as error:
+        details = error.read().decode("utf-8", errors="replace")
+        print(f"Ollama request failed with HTTP {error.code}: {details}")
+        if error.code == 404:
+            raise AIServiceError(
+                f"Ollama could not find model '{ollama_model}'. Run "
+                f"`ollama pull {ollama_model}` in PowerShell.",
+                503,
+            ) from error
+        raise AIServiceError(
+            "Ollama returned an error. Check the Ollama app and the PowerShell output.",
+            502,
+        ) from error
+    except (URLError, socket.timeout, TimeoutError) as error:
+        print(f"Could not connect to Ollama at {ollama_url}: {error}")
+        raise AIServiceError(
+            "Could not connect to Ollama. Install and start Ollama, then try again.",
+            503,
+        ) from error
+    except (json.JSONDecodeError, KeyError, TypeError) as error:
+        print(f"Invalid response from Ollama: {error}")
+        raise AIServiceError("Ollama returned an invalid response. Please try again.", 502) from error
+
+    message_result = result.get("message") if isinstance(result, dict) else None
+    answer = message_result.get("content") if isinstance(message_result, dict) else None
+    if isinstance(answer, str) and answer.strip():
+        return answer.strip()
+    raise AIServiceError("Ollama returned an empty response. Please try again.", 502)
 
 if __name__ == '__main__':
     app.run(debug=True)
